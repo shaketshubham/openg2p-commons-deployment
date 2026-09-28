@@ -21,7 +21,7 @@ global:
   # Service hostnames owned by commons-base — single source of truth used by both
   # the actual service deployments and the keycloak-init redirect URIs below.
   kafkaUiHostname: 'kafka.{{ tpl .Values.global.baseDomain $ }}'
-  minioHostname: 'minio.{{ tpl .Values.global.baseDomain $ }}'
+  garageHostname: 'garage.{{ tpl .Values.global.baseDomain $ }}'
 
   postgresqlHost: '{{ .Release.Name }}-postgresql'
   # PostgreSQL superuser secret. Defaults to the embedded chart's auto-created secret.
@@ -47,7 +47,7 @@ global:
   postgresqlSecret: '{{ .Release.Name }}-postgresql'
   postgresqlSecretKey: postgres-password
   mailInstallationName: '{{ .Release.Name }}-mail'
-  minioInstallationName: '{{ .Release.Name }}-minio'
+  garageInstallationName: '{{ .Release.Name }}-garage'
 
   sysAdminEmail: admin@openg2p.sandbox.org
   redisInstallationName: '{{ .Release.Name }}-redis'
@@ -93,11 +93,6 @@ keycloak-init:
           redirectUris:
             - 'https://{{ tpl .Values.global.kafkaUiHostname $ }}/*'
           clientRoles: ["Admin"]
-        - clientId: openg2p-minio
-          name: MinIO
-          redirectUris:
-            - 'https://{{ tpl .Values.global.minioHostname $ }}/*'
-          clientRoles: ["consoleAdmin"]
       users:
         - username: admin
           password: admin
@@ -111,8 +106,6 @@ keycloak-init:
           clientRoleMappings:
             openg2p-kafka:
               - "Admin"
-            openg2p-minio:
-              - "consoleAdmin"
 
 postgresql:
   enabled: true
@@ -252,7 +245,7 @@ redis-auth:
       enabled: false
 
 minio:
-  enabled: true
+  enabled: false
   hostname: '{{ tpl .Values.global.minioHostname $ }}'
   persistence:
     enabled: true
@@ -341,6 +334,22 @@ minio:
       tls:
         mode: SIMPLE
         credentialName: ""
+garage:
+  enabled: true
+  garage:
+    replicationFactor: "1"
+    s3:
+      api:
+        region: "us-east-1"
+  persistence:
+    enabled: true
+    data:
+      size: 16Gi
+    meta:
+      size: 1Gi
+  deployment:
+    replicaCount: 1
+
 
 kafka:
   enabled: true

@@ -25,7 +25,7 @@ global:
   postgresqlSecret: commons-postgresql
   postgresqlSecretKey: postgres-password
   mailInstallationName: commons-mail
-  minioInstallationName: commons-minio
+  garageInstallationName: commons-garage
 
   sysAdminEmail: admin@openg2p.sandbox.org
   redisInstallationName: commons-redis
@@ -136,9 +136,9 @@ odk-central:
   hostname: '{{ tpl .Values.global.odkHostname $ }}'
 
   postgresqlInstallationName: '{{ tpl .Values.global.postgresqlHost $ }}'
-  minioInstallationName: '{{ tpl .Values.global.minioInstallationName $ }}'
+  minioInstallationName: '{{ tpl .Values.global.garageInstallationName $ }}'
   mailInstallationName: '{{ tpl .Values.global.mailInstallationName $ }}'
-
+  
   oidcClientId: openg2p-odk
   # Name of the secret in Kubernetes containing (DO NOT put password directly here)
   # Same name as client id by convention.
@@ -149,10 +149,12 @@ odk-central:
   s3BlobsEnabled: true
   # MinIO S3 API port (the bitnami chart exposes S3 on 9000, console on 9001).
   # Use the internal cluster service name — pod-to-pod, not via Istio.
-  s3ServerUrl: 'http://{{ tpl .Values.global.minioInstallationName $ }}:9000'
+  s3ServerUrl: 'http://{{ tpl .Values.global.garageInstallationName $ }}:3900'
 
   odk-central-enketo:
     enabled: true
+    # redisMainInstallationName: commons-redis-master
+    # redisCacheInstallationName: commons-redis-master
     # Based on observed usage ~468Mi.
     resources:
       requests:
@@ -186,13 +188,12 @@ odk-central:
     initContainers:
     - name: wait-for-minio
       image: busybox:1.36
-      imagePullPolicy: IfNotPresent
       command:
         - sh
         - -c
-        - |
-          until nc -zv {{ tpl .Values.global.minioInstallationName $ }} 9000; do
-            echo "Waiting for MinIO..."
+        - | 
+          until nc -zv {{ tpl .Values.global.garageInstallationName $ }} 3900; do   
+            echo "Waiting for Garage..."
             sleep 2
           done
     envVars:
@@ -607,7 +608,7 @@ openg2p-iam-service:
     staffPortalDefaultRedirectUri: 'https://staff-portal.{{ tpl .Values.global.baseDomain $ }}'
     keycloakApplicationUrl: 'https://keycloak.{{ tpl .Values.global.baseDomain $ }}'
     registryApplicationUrl: 'https://registry.{{ tpl .Values.global.baseDomain $ }}'
-    minioApplicationUrl: 'https://minio.{{ tpl .Values.global.baseDomain $ }}'
+    # minioApplicationUrl: 'https://minio.{{ tpl .Values.global.baseDomain $ }}'
     supersetApplicationUrl: 'https://{{ tpl .Values.global.supersetHostname $ }}'
   postgres-init:
     enabled: true
